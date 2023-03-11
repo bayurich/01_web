@@ -37,7 +37,7 @@ public class Server {
             while (true) {
                 try {
                     final var socket = serverSocket.accept();
-                    log("request IN");
+                    //log("request IN");
                     threadPool.submit(process(socket));
                 } catch (Exception e) {
                     e.printStackTrace();
