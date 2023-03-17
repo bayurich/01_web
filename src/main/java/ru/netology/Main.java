@@ -26,8 +26,8 @@ public class Main {
     server.addHandler("POST", "/messages", new Handler() {
       public void handle(Request request, BufferedOutputStream responseStream) throws IOException {
         // TODO: handlers code
-        responseStream.write("Response for POST /messages".getBytes());
-        responseStream.flush();
+        String response = "Response for POST /messages";
+        server.setResponse200(responseStream, response.getBytes());
       }
     });
 
