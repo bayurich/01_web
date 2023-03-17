@@ -74,7 +74,7 @@ public class Request {
     }
 
     public String getBodyAsString() {
-        return new String(body);
+        return (body == null || body.length == 0) ? "" : new String(body);
     }
 
 

@@ -22,6 +22,7 @@ public class Server {
 
 
     static final int POOL_SIZE = 64;
+    private static final String HEADER_CONTENT_LENGHT = "Content-Length";
 
     final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
@@ -130,12 +131,14 @@ public class Server {
         final var requestLineDelimiter = new byte[]{'\r', '\n'};
         final var requestLineEnd = indexOf(buffer, requestLineDelimiter, 0, read);
         if (requestLineEnd == -1) {
+            log("error while finding requestLine");
             return null;
         }
 
         // читаем request line
         final var requestLine = new String(Arrays.copyOf(buffer, requestLineEnd)).split(" ");
         if (requestLine.length != 3) {
+            log("error requestLine format: " + Arrays.toString(requestLine));
             return null;
         }
 
@@ -161,6 +164,7 @@ public class Server {
         final var headersStart = requestLineEnd + requestLineDelimiter.length;
         final var headersEnd = indexOf(buffer, headersDelimiter, headersStart, read);
         if (headersEnd == -1) {
+            log("error while finding headers");
             return null;
         }
 
@@ -178,11 +182,8 @@ public class Server {
                 .filter(s -> s.length == 2)
                 .collect(Collectors.toMap(s -> s[0], s -> s[1]));
 
-        log("====== headers: ===========");
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            log(entry.getKey() + ": " + entry.getValue());
-        }
-        log("====== headers end ===========");
+        log("headers: " + headers);
+
 
         // для GET тела нет
         byte[] bodyBytes = null;
@@ -197,17 +198,32 @@ public class Server {
                 log("body: " + new String(bodyBytes));
             }*/
 
-            if (headers.containsKey("Content-Length")) {
-                final String contentLength = headers.get("Content-Length");
+            if (headers.containsKey(HEADER_CONTENT_LENGHT)) {
+                final String contentLength = headers.get(HEADER_CONTENT_LENGHT);
                 final var length = Integer.parseInt(contentLength);
 
                 bodyBytes = in.readNBytes(length);
 
-                log("body: " + new String(bodyBytes));
+                //log("body: " + new String(bodyBytes));
+            }
+            else {
+                log("header " + HEADER_CONTENT_LENGHT + " not found");
             }
         }
 
-        return new Request(method, path, headers, bodyBytes);
+        Request request = new Request(method, path, headers, bodyBytes);
+
+        log("method: " + request.getMethod());
+        log("path: " + request.getPath());
+        log("query: " + request.getPath());
+        log("====== headers: ===========");
+        for (Map.Entry<String, String> entry : request.getHeaders().entrySet()) {
+            log(entry.getKey() + ": " + entry.getValue());
+        }
+        log("====== headers end ===========");
+        log("body: " + request.getBodyAsString());
+
+        return request;
     }
 
     public void addHandler(String method, String path, Handler handler) {
